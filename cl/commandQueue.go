@@ -1,5 +1,5 @@
 /*
- * Copyright © 2012 Paul Sbarra
+ * Copyright © 2012 go-opencl authors
  *
  * This file is part of go-opencl.
  *
