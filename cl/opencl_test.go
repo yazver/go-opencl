@@ -110,7 +110,7 @@ __kernel void hello(__global uchar *input, __global uchar *output)
 		t.Fatal("Error setting kernel arg 0:", err)
 	} else if err = kernel.SetArg(1, outBuf); err != nil {
 		t.Fatal("Error setting kernel arg 1:", err)
-	} else if err = queue.EnqueueKernel(kernel, 0, uint(len(inData)), uint(len(inData))); err != nil {
+	} else if err = queue.EnqueueKernel(kernel, []Size{0}, []Size{Size(len(inData))}, []Size{Size(len(inData))}); err != nil {
 		t.Fatal("Error enquing kernel:", err)
 	}
 

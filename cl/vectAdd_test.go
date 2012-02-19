@@ -96,7 +96,7 @@ __kernel void vectAdd(__global int *A,
 				t.Fatal(err)
 			}
 
-			if err = queue.EnqueueKernel(kernel, 0, elements, 1); err != nil {
+			if err = queue.EnqueueKernel(kernel, []Size{0}, []Size{elements}, []Size{1}); err != nil {
 				t.Fatal(err)
 			}
 

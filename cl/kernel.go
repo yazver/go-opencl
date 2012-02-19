@@ -40,8 +40,13 @@ func (k *Kernel) SetArg(index uint, arg interface{}) error {
 	var ret C.cl_int
 
 	switch t := arg.(type) {
-	case *Buffer:
+	case *Buffer: // can't use *Image here, compiler bug?
 		ret = C.clSetKernelArg(k.id, C.cl_uint(index), C.size_t(unsafe.Sizeof(t.id)), unsafe.Pointer(&t.id))
+	case *Image:
+		ret = C.clSetKernelArg(k.id, C.cl_uint(index), C.size_t(unsafe.Sizeof(t.id)), unsafe.Pointer(&t.id))
+	case float32:
+		f := C.float(t)
+		ret = C.clSetKernelArg(k.id, C.cl_uint(index), C.size_t(unsafe.Sizeof(f)), unsafe.Pointer(&f))
 
 	default:
 		return Cl_error(C.CL_INVALID_VALUE)
