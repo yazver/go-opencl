@@ -27,6 +27,12 @@ package cl
 
 cl_context_properties PlatformToContextParameter(cl_platform_id platform) { return (cl_context_properties)platform; }
 
+cl_program clCreateProgramFromString(cl_context context,
+                                     char*      string,
+                                     cl_int*    err) {
+   return clCreateProgramWithSource(context, 1, (const char**)&string, NULL, err);
+}
+
 */
 import "C"
 
@@ -216,7 +222,7 @@ func (c *Context) NewProgramFromSource(prog string) (*Program, error) {
 	cs := C.CString(prog)
 	defer C.free(unsafe.Pointer(cs))
 
-	if c_program = C.clCreateProgramWithSource(c.id, 1, &cs, (*C.size_t)(nil), &err); err != C.CL_SUCCESS {
+	if c_program = C.clCreateProgramFromString(c.id, cs, &err); err != C.CL_SUCCESS {
 		return nil, Cl_error(err)
 	} else if err = C.clBuildProgram(c_program, 0, nil, nil, nil, nil); err != C.CL_SUCCESS {
 		C.clReleaseProgram(c_program)
