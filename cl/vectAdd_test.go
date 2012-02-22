@@ -27,15 +27,6 @@ import (
 func Test_VectAdd(t *testing.T) {
 	const elements = 100000
 
-	var kernelSrc = `
-__kernel void vectAdd(__global int *A,
-                      __global int *B,
-                      __global int *C)
-{
-   int i = get_global_id(0);
-   C[i] = A[i] + B[i];
-}`
-
 	A := make([]int, elements)
 	B := make([]int, elements)
 	for i := 0; i < elements; i++ {
@@ -78,11 +69,11 @@ __kernel void vectAdd(__global int *A,
 				t.Fatal(err)
 			}
 
-			if program, err = context.NewProgramFromSource(kernelSrc); err != nil {
+			if program, err = context.NewProgramFromFile("vector.cl"); err != nil {
 				t.Fatal(err)
 			}
 
-			if kernel, err = program.NewKernelNamed("vectAdd"); err != nil {
+			if kernel, err = program.NewKernelNamed("vectAddInt"); err != nil {
 				t.Fatal(err)
 			}
 

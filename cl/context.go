@@ -37,6 +37,7 @@ cl_program clCreateProgramFromString(cl_context context,
 import "C"
 
 import (
+	"io/ioutil"
 	"runtime"
 	"unsafe"
 )
@@ -233,6 +234,14 @@ func (c *Context) NewProgramFromSource(prog string) (*Program, error) {
 	runtime.SetFinalizer(program, (*Program).release)
 
 	return program, nil
+}
+
+func (c *Context) NewProgramFromFile(filename string) (*Program, error) {
+	content, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	return c.NewProgramFromSource(string(content))
 }
 
 func (c *Context) NewBuffer(flags MemFlags, size uint32) (*Buffer, error) {

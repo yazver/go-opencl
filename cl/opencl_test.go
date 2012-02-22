@@ -48,8 +48,8 @@ func getContext(p Platform, d []Device, t *testing.T) *Context {
 	return nil
 }
 
-func getProgram(c *Context, source string, t *testing.T) *Program {
-	if program, err := c.NewProgramFromSource(source); err != nil {
+func getProgram(c *Context, filename string, t *testing.T) *Program {
+	if program, err := c.NewProgramFromFile(filename); err != nil {
 		t.Fatal("Error creating program:", err)
 	} else {
 		return program
@@ -76,13 +76,6 @@ func getQueue(c *Context, d Device, t *testing.T) *CommandQueue {
 }
 
 func Test_OpenCl(t *testing.T) {
-	var square_source = `
-__kernel void hello(__global uchar *input, __global uchar *output)
-{
-   size_t id = get_global_id(0);
-   output[id] = input[id] * input[id];
-}`
-
 	inData := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
 	var err error
@@ -92,8 +85,8 @@ __kernel void hello(__global uchar *input, __global uchar *output)
 	context := getContext(platform, devices, t)
 	queue := getQueue(context, devices[0], t)
 
-	program := getProgram(context, square_source, t)
-	kernel := getKernel(program, "hello", t)
+	program := getProgram(context, "vector.cl", t)
+	kernel := getKernel(program, "vectSquareUChar", t)
 
 	var inBuf, outBuf *Buffer
 	if inBuf, err = context.NewBuffer(MEM_READ_ONLY, 100); err != nil {
