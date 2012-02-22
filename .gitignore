@@ -1,3 +1,2 @@
-_*
-*.o
-*.out
+clinfo/clinfo
+cl/demo/rotate/rotate
