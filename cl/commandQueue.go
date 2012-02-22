@@ -124,3 +124,20 @@ func (cq *CommandQueue) EnqueueReadImage(im *Image, origin, region [3]Size, rowP
 	}
 	return bytes, nil
 }
+
+func (cq *CommandQueue) EnqueueWriteImage(img *Image, blocking bool, origin, region [3]Size, rowPitch, slicePitch Size, data []byte) error {
+	c_blocking := C.cl_bool(C.CL_FALSE)
+	if blocking {
+		c_blocking = C.CL_TRUE
+	}
+
+	if ret := C.clEnqueueWriteImage(
+		cq.id, img.id, c_blocking,
+		(*C.size_t)(unsafe.Pointer(&origin[0])), (*C.size_t)(unsafe.Pointer(&region[0])),
+		C.size_t(rowPitch), C.size_t(slicePitch),
+		unsafe.Pointer(&data[0]),
+		C.cl_uint(0), nil, nil); ret != C.CL_SUCCESS {
+		return Cl_error(ret)
+	}
+	return nil
+}
