@@ -20,7 +20,6 @@
 package cl
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -32,7 +31,6 @@ func getPlatform(t *testing.T) Platform {
 }
 
 func getCPUDevice(p Platform, t *testing.T) []Device {
-	fmt.Println("Devices:", len(p.Devices))
 	if len(p.Devices) == 0 {
 		t.Fatal("No devices found")
 	}
@@ -113,7 +111,6 @@ func Test_OpenCl(t *testing.T) {
 	}
 
 	for i, v := range data {
-		fmt.Println("Data[", i, "] = ", v)
 		if v != inData[i]*inData[i] {
 			t.Fatal("Incorrect results")
 		}
