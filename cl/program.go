@@ -33,6 +33,37 @@ import (
 	"unsafe"
 )
 
+type BuildProperty C.cl_program_build_info
+
+const (
+	//BUILD_STATUS  BuildProperty = C.CL_PROGRAM_BUILD_STATUS
+	BUILD_OPTIONS BuildProperty = C.CL_PROGRAM_BUILD_OPTIONS
+	BUILD_LOG     BuildProperty = C.CL_PROGRAM_BUILD_LOG
+)
+
+type BuildStatus C.cl_build_status
+
+const (
+	BUILD_NONE        BuildStatus = C.CL_BUILD_NONE
+	BUILD_ERROR       BuildStatus = C.CL_BUILD_ERROR
+	BUILD_SUCCESS     BuildStatus = C.CL_BUILD_SUCCESS
+	BUILD_IN_PROGRESS BuildStatus = C.CL_BUILD_IN_PROGRESS
+)
+
+func (status BuildStatus) String() string {
+	switch status {
+	case BUILD_NONE:
+		return "None"
+	case BUILD_ERROR:
+		return "Error"
+	case BUILD_SUCCESS:
+		return "Success"
+	case BUILD_IN_PROGRESS:
+		return "In Progress"
+	}
+	return "Unknown"
+}
+
 type Program struct {
 	id C.cl_program
 }
@@ -52,6 +83,29 @@ func (p *Program) NewKernelNamed(name string) (*Kernel, error) {
 	runtime.SetFinalizer(kernel, (*Kernel).release)
 
 	return kernel, nil
+}
+
+func (p *Program) BuildStatus(dev Device) BuildStatus {
+	var c_status C.cl_build_status
+	var count C.size_t
+	if ret := C.clGetProgramBuildInfo(p.id, dev.id, C.CL_PROGRAM_BUILD_STATUS, C.size_t(unsafe.Sizeof(c_status)), unsafe.Pointer(&c_status), &count); ret != C.CL_SUCCESS {
+		return BUILD_ERROR
+	}
+	return BuildStatus(c_status)
+
+}
+
+func (p *Program) Property(dev Device, prop BuildProperty) string {
+	var count C.size_t
+	if ret := C.clGetProgramBuildInfo(p.id, dev.id, C.cl_program_build_info(prop), 0, nil, &count); ret != C.CL_SUCCESS || count < 1 {
+		return ""
+	}
+
+	buf := make([]C.char, count)
+	if ret := C.clGetProgramBuildInfo(p.id, dev.id, C.cl_program_build_info(prop), count, unsafe.Pointer(&buf[0]), &count); ret != C.CL_SUCCESS || count < 1 {
+		return ""
+	}
+	return C.GoStringN(&buf[0], C.int(count-1))
 }
 
 func (p *Program) release() error {
