@@ -255,15 +255,15 @@ func (c *Context) NewBuffer(flags MemFlags, size uint32) (*Buffer, error) {
 	return buffer, nil
 }
 
-func (c *Context) NewImage2D(flags MemFlags, order ChannelOrder, dataType ChannelType, width, height, rowPitch uint32, data *byte) (*Image, error) {
+func (c *Context) NewImage2D(flags MemFlags, format ImageFormat, width, height, rowPitch uint32, data *byte) (*Image, error) {
 	var c_buffer C.cl_mem
 	var err C.cl_int
 
-	format := new(C.cl_image_format)
-	format.image_channel_order = C.cl_channel_order(order)
-	format.image_channel_data_type = C.cl_channel_type(dataType)
+	c_format := &C.cl_image_format{
+		image_channel_order:     C.cl_channel_order(format.ChannelOrder),
+		image_channel_data_type: C.cl_channel_type(format.ChannelDataType)}
 
-	if c_buffer = C.clCreateImage2D(c.id, C.cl_mem_flags(flags), format, C.size_t(width), C.size_t(height), C.size_t(rowPitch), unsafe.Pointer(data), &err); err != C.CL_SUCCESS {
+	if c_buffer = C.clCreateImage2D(c.id, C.cl_mem_flags(flags), c_format, C.size_t(width), C.size_t(height), C.size_t(rowPitch), unsafe.Pointer(data), &err); err != C.CL_SUCCESS {
 		return nil, Cl_error(err)
 	}
 
@@ -273,15 +273,15 @@ func (c *Context) NewImage2D(flags MemFlags, order ChannelOrder, dataType Channe
 	return image, nil
 }
 
-func (c *Context) NewImage3D(flags MemFlags, order ChannelOrder, dataType ChannelType, width, height, depth, rowPitch, slicePitch uint32, data *byte) (*Image, error) {
+func (c *Context) NewImage3D(flags MemFlags, format ImageFormat, width, height, depth, rowPitch, slicePitch uint32, data *byte) (*Image, error) {
 	var c_buffer C.cl_mem
 	var err C.cl_int
 
-	format := new(C.cl_image_format)
-	format.image_channel_order = C.cl_channel_order(order)
-	format.image_channel_data_type = C.cl_channel_type(dataType)
+	c_format := &C.cl_image_format{
+		image_channel_order:     C.cl_channel_order(format.ChannelOrder),
+		image_channel_data_type: C.cl_channel_type(format.ChannelDataType)}
 
-	if c_buffer = C.clCreateImage3D(c.id, C.cl_mem_flags(flags), format, C.size_t(width), C.size_t(height), C.size_t(depth), C.size_t(rowPitch), C.size_t(slicePitch), unsafe.Pointer(data), &err); err != C.CL_SUCCESS {
+	if c_buffer = C.clCreateImage3D(c.id, C.cl_mem_flags(flags), c_format, C.size_t(width), C.size_t(height), C.size_t(depth), C.size_t(rowPitch), C.size_t(slicePitch), unsafe.Pointer(data), &err); err != C.CL_SUCCESS {
 		return nil, Cl_error(err)
 	}
 

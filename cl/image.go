@@ -29,47 +29,49 @@ import "C"
 
 import "unsafe"
 
-/* cl_channel_order */
-type ChannelOrder C.cl_channel_order
+type channelOrder C.cl_channel_order
 
 const (
-	R         ChannelOrder = C.CL_R
-	A         ChannelOrder = C.CL_A
-	RG        ChannelOrder = C.CL_RG
-	RA        ChannelOrder = C.CL_RA
-	RGB       ChannelOrder = C.CL_RGB
-	RGBA      ChannelOrder = C.CL_RGBA
-	BGRA      ChannelOrder = C.CL_BGRA
-	ARGB      ChannelOrder = C.CL_ARGB
-	INTENSITY ChannelOrder = C.CL_INTENSITY
-	LUMINANCE ChannelOrder = C.CL_LUMINANCE
-	Rx        ChannelOrder = C.CL_Rx
-	RGx       ChannelOrder = C.CL_RGx
-	RGBx      ChannelOrder = C.CL_RGBx
+	R         channelOrder = C.CL_R
+	A         channelOrder = C.CL_A
+	RG        channelOrder = C.CL_RG
+	RA        channelOrder = C.CL_RA
+	RGB       channelOrder = C.CL_RGB
+	RGBA      channelOrder = C.CL_RGBA
+	BGRA      channelOrder = C.CL_BGRA
+	ARGB      channelOrder = C.CL_ARGB
+	INTENSITY channelOrder = C.CL_INTENSITY
+	LUMINANCE channelOrder = C.CL_LUMINANCE
+	Rx        channelOrder = C.CL_Rx
+	RGx       channelOrder = C.CL_RGx
+	RGBx      channelOrder = C.CL_RGBx
 )
 
-/* cl_channel_type */
-type ChannelType C.cl_channel_type
+type channelType C.cl_channel_type
 
 const (
-	SNORM_INT8       ChannelType = C.CL_SNORM_INT8
-	SNORM_INT16      ChannelType = C.CL_SNORM_INT16
-	UNORM_INT8       ChannelType = C.CL_SNORM_INT8
-	UNORM_INT16      ChannelType = C.CL_SNORM_INT16
-	UNORM_SHORT_565  ChannelType = C.CL_UNORM_SHORT_565
-	UNORM_SHORT_555  ChannelType = C.CL_UNORM_SHORT_555
-	UNORM_INT_101010 ChannelType = C.CL_UNORM_INT_101010
-	SIGNED_INT8      ChannelType = C.CL_SIGNED_INT8
-	SIGNED_INT16     ChannelType = C.CL_SIGNED_INT16
-	SIGNED_INT32     ChannelType = C.CL_SIGNED_INT32
-	UNSIGNED_INT8    ChannelType = C.CL_UNSIGNED_INT8
-	UNSIGNED_INT16   ChannelType = C.CL_UNSIGNED_INT16
-	UNSIGNED_INT32   ChannelType = C.CL_UNSIGNED_INT32
-	HALF_FLOAT       ChannelType = C.CL_HALF_FLOAT
-	FLOAT            ChannelType = C.CL_FLOAT
+	FLOAT            channelType = C.CL_FLOAT
+	HALF_FLOAT       channelType = C.CL_HALF_FLOAT
+	SIGNED_INT8      channelType = C.CL_SIGNED_INT8
+	SIGNED_INT16     channelType = C.CL_SIGNED_INT16
+	SIGNED_INT32     channelType = C.CL_SIGNED_INT32
+	SNORM_INT8       channelType = C.CL_SNORM_INT8
+	SNORM_INT16      channelType = C.CL_SNORM_INT16
+	UNORM_INT8       channelType = C.CL_UNORM_INT8
+	UNORM_INT16      channelType = C.CL_UNORM_INT16
+	UNORM_SHORT_565  channelType = C.CL_UNORM_SHORT_565
+	UNORM_SHORT_555  channelType = C.CL_UNORM_SHORT_555
+	UNORM_INT_101010 channelType = C.CL_UNORM_INT_101010
+	UNSIGNED_INT8    channelType = C.CL_UNSIGNED_INT8
+	UNSIGNED_INT16   channelType = C.CL_UNSIGNED_INT16
+	UNSIGNED_INT32   channelType = C.CL_UNSIGNED_INT32
 )
 
-/* cl_addressing_mode */
+type ImageFormat struct {
+	ChannelOrder    channelOrder
+	ChannelDataType channelType
+}
+
 type AddressingMode C.cl_addressing_mode
 
 const (
