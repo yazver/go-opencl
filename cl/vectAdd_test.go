@@ -73,6 +73,10 @@ func Test_VectAdd(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			if err = program.Build([]Device{dev}, ""); err != nil {
+				t.Fatal(err)
+			}
+
 			if kernel, err = program.NewKernelNamed("vectAddInt"); err != nil {
 				t.Fatal(err)
 			}

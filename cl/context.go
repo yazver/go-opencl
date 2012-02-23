@@ -225,9 +225,6 @@ func (c *Context) NewProgramFromSource(prog string) (*Program, error) {
 
 	if c_program = C.clCreateProgramFromString(c.id, cs, &err); err != C.CL_SUCCESS {
 		return nil, Cl_error(err)
-	} else if err = C.clBuildProgram(c_program, 0, nil, nil, nil, nil); err != C.CL_SUCCESS {
-		C.clReleaseProgram(c_program)
-		return nil, Cl_error(err)
 	}
 
 	program := &Program{id: c_program}

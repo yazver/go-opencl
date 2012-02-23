@@ -68,6 +68,27 @@ type Program struct {
 	id C.cl_program
 }
 
+func (p *Program) Build(devices []Device, options string) error {
+	cs := C.CString(options)
+	defer C.free(unsafe.Pointer(cs))
+
+	if len(devices) < 1 {
+		if ret := C.clBuildProgram(p.id, 0, nil, cs, nil, nil); ret != C.CL_SUCCESS {
+			return Cl_error(ret)
+		}
+		return nil
+	}
+
+	c_devices := make([]C.cl_device_id, len(devices))
+	for i, device := range devices {
+		c_devices[i] = device.id
+	}
+	if ret := C.clBuildProgram(p.id, C.cl_uint(len(c_devices)), &c_devices[0], cs, nil, nil); ret != C.CL_SUCCESS {
+		return Cl_error(ret)
+	}
+	return nil
+}
+
 func (p *Program) NewKernelNamed(name string) (*Kernel, error) {
 	var c_kernel C.cl_kernel
 	var err C.cl_int

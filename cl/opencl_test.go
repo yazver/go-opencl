@@ -84,6 +84,9 @@ func Test_OpenCl(t *testing.T) {
 	queue := getQueue(context, devices[0], t)
 
 	program := getProgram(context, "vector.cl", t)
+	if err = program.Build(nil, ""); err != nil {
+		t.Fatal("Error building program:", err)
+	}
 	kernel := getKernel(program, "vectSquareUChar", t)
 
 	var inBuf, outBuf *Buffer
