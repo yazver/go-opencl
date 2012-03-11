@@ -29,7 +29,7 @@ func main() {
 		fmt.Println("  Platform Version:", platform.Property(cl.PLATFORM_VERSION))
 		fmt.Println("  Platform Name:", platform.Property(cl.PLATFORM_NAME))
 		fmt.Println("  Platform Vendor:", platform.Property(cl.PLATFORM_VENDOR))
-		fmt.Println("  Platform Extensions:", platform.Property(cl.PLATFORM_EXTENSIONS), "\n\n")
+		fmt.Printf("  Platform Extensions: %v\n\n", platform.Property(cl.PLATFORM_EXTENSIONS))
 		fmt.Println("  Platform Name:", platform.Property(cl.PLATFORM_NAME))
 
 		fmt.Println("Number of devices:", len(platform.Devices))
