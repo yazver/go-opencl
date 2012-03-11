@@ -100,10 +100,8 @@ func Test_OpenCl(t *testing.T) {
 		t.Fatal("Error enquing data:", err)
 	}
 
-	if err = kernel.SetArg(0, inBuf); err != nil {
-		t.Fatal("Error setting kernel arg 0:", err)
-	} else if err = kernel.SetArg(1, outBuf); err != nil {
-		t.Fatal("Error setting kernel arg 1:", err)
+	if err = kernel.SetArgs(0, []interface{}{inBuf, outBuf}); err != nil {
+		t.Fatal("Error setting kernel arguments :", err)
 	} else if err = queue.EnqueueKernel(kernel, []Size{0}, []Size{Size(len(inData))}, []Size{Size(len(inData))}); err != nil {
 		t.Fatal("Error enquing kernel:", err)
 	}

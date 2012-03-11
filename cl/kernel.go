@@ -60,6 +60,15 @@ func (k *Kernel) SetArg(index uint, arg interface{}) error {
 	return nil
 }
 
+func (k *Kernel) SetArgs(offset uint, args []interface{}) error {
+	for i, arg := range args {
+		if err := k.SetArg(offset+uint(i), arg); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (k *Kernel) release() error {
 	if k.id != nil {
 		if err := C.clReleaseKernel(k.id); err != C.CL_SUCCESS {

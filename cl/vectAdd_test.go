@@ -81,13 +81,7 @@ func Test_VectAdd(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if err = kernel.SetArg(0, bufA); err != nil {
-				t.Fatal(err)
-			}
-			if err = kernel.SetArg(1, bufB); err != nil {
-				t.Fatal(err)
-			}
-			if err = kernel.SetArg(2, bufC); err != nil {
+			if err = kernel.SetArgs(0, []interface{}{bufA, bufB, bufC}); err != nil {
 				t.Fatal(err)
 			}
 

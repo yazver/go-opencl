@@ -162,23 +162,11 @@ func main() {
 				fatalError(err)
 			}
 
-			if err = kernel.SetArg(0, sourceImage); err != nil {
-				fatalError(err)
-			}
-
-			if err = kernel.SetArg(1, destImage); err != nil {
-				fatalError(err)
-			}
-
-			if err = kernel.SetArg(2, float32(math.Sin(*angle*math.Pi/180))); err != nil {
-				fatalError(err)
-			}
-
-			if err = kernel.SetArg(3, float32(math.Cos(*angle*math.Pi/180))); err != nil {
-				fatalError(err)
-			}
-
-			if err = kernel.SetArg(4, sampler); err != nil {
+			if err = kernel.SetArgs(0, []interface{}{
+				sourceImage, destImage,
+				float32(math.Sin(*angle * math.Pi / 180)),
+				float32(math.Cos(*angle * math.Pi / 180)),
+				sampler}); err != nil {
 				fatalError(err)
 			}
 
