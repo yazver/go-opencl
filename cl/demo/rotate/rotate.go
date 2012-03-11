@@ -135,7 +135,7 @@ func main() {
 				fatalError(err)
 			}
 
-			if sampler, err = context.NewSampler(false, cl.ADDRESS_NONE, cl.FILTER_NEAREST); err != nil {
+			if sampler, err = context.NewSampler(false, cl.ADDRESS_CLAMP, cl.FILTER_NEAREST); err != nil {
 				fatalError(err)
 			}
 
@@ -158,7 +158,7 @@ func main() {
 				fatalError(err)
 			}
 
-			if err = queue.EnqueueWriteImage(sourceImage, false, [3]cl.Size{0, 0, 0}, [3]cl.Size{cl.Size(size.X), cl.Size(size.Y), 1}, 0, 0, raw.ByteSlice(pixels)); err != nil {
+			if err = queue.EnqueueWriteImage(sourceImage, true, [3]cl.Size{0, 0, 0}, [3]cl.Size{cl.Size(size.X), cl.Size(size.Y), 1}, 0, 0, raw.ByteSlice(pixels)); err != nil {
 				fatalError(err)
 			}
 
@@ -174,7 +174,7 @@ func main() {
 				fatalError(err)
 			}
 
-			if outPixels, err = queue.EnqueueReadImage(destImage, [3]cl.Size{0, 0, 0}, [3]cl.Size{cl.Size(size.X), cl.Size(size.Y), 1}, 0, 0); err != nil {
+			if outPixels, err = queue.EnqueueReadImage(destImage, true, [3]cl.Size{0, 0, 0}, [3]cl.Size{cl.Size(size.X), cl.Size(size.Y), 1}, 0, 0); err != nil {
 				fatalError(err)
 			}
 

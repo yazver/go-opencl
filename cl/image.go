@@ -27,7 +27,9 @@ package cl
 */
 import "C"
 
-import "unsafe"
+import (
+	"unsafe"
+)
 
 type channelOrder C.cl_channel_order
 
@@ -72,84 +74,46 @@ type ImageFormat struct {
 	ChannelDataType channelType
 }
 
-type AddressingMode C.cl_addressing_mode
+type ImageProperty C.cl_image_info
 
 const (
-	ADDRESS_NONE            AddressingMode = C.CL_ADDRESS_NONE
-	ADDRESS_CLAMP_TO_EDGE   AddressingMode = C.CL_ADDRESS_CLAMP_TO_EDGE
-	ADDRESS_CLAMP           AddressingMode = C.CL_ADDRESS_CLAMP
-	ADDRESS_REPEAT          AddressingMode = C.CL_ADDRESS_REPEAT
-	ADDRESS_MIRRORED_REPEAT AddressingMode = C.CL_ADDRESS_MIRRORED_REPEAT
-)
-
-/* cl_filter_mode */
-type FilterMode C.cl_filter_mode
-
-const (
-	FILTER_NEAREST = C.CL_FILTER_NEAREST
-	FILTER_LINEAR  = C.CL_FILTER_LINEAR
+	//IMAGE_FORMAT       ImageProperty = C.CL_IMAGE_FORMAT
+	IMAGE_ELEMENT_SIZE ImageProperty = C.CL_IMAGE_ELEMENT_SIZE
+	IMAGE_ROW_PITCH    ImageProperty = C.CL_IMAGE_ROW_PITCH
+	IMAGE_SLICE_PITCH  ImageProperty = C.CL_IMAGE_SLICE_PITCH
+	IMAGE_WIDTH        ImageProperty = C.CL_IMAGE_WIDTH
+	IMAGE_HEIGHT       ImageProperty = C.CL_IMAGE_HEIGHT
+	IMAGE_DEPTH        ImageProperty = C.CL_IMAGE_DEPTH
 )
 
 type Image struct {
-	id      C.cl_mem
-	w, h, d uint32
+	id         C.cl_mem
+	format     ImageFormat
+	properties map[ImageProperty]Size
+}
+
+func (i *Image) Format() ImageFormat {
+	return i.format
+}
+
+func (i *Image) Property(prop ImageProperty) Size {
+	if value, ok := i.properties[prop]; ok {
+		return value
+	}
+
+	var data C.size_t
+	var length C.size_t
+
+	if ret := C.clGetImageInfo(i.id, C.cl_image_info(prop), C.size_t(unsafe.Sizeof(data)), unsafe.Pointer(&data), &length); ret != C.CL_SUCCESS {
+		return 0
+	}
+
+	i.properties[prop] = Size(data)
+	return i.properties[prop]
 }
 
 func (im *Image) release() error {
 	err := releaseMemObject(im.id)
 	im.id = nil
 	return err
-}
-
-/* cl_image_info */
-type ImageInfo C.cl_image_info
-
-const (
-	IMAGE_FORMAT       ImageInfo = C.CL_IMAGE_FORMAT
-	IMAGE_ELEMENT_SIZE ImageInfo = C.CL_IMAGE_ELEMENT_SIZE
-	IMAGE_ROW_PITCH    ImageInfo = C.CL_IMAGE_ROW_PITCH
-	IMAGE_SLICE_PITCH  ImageInfo = C.CL_IMAGE_SLICE_PITCH
-	IMAGE_WIDTH        ImageInfo = C.CL_IMAGE_WIDTH
-	IMAGE_HEIGHT       ImageInfo = C.CL_IMAGE_HEIGHT
-	IMAGE_DEPTH        ImageInfo = C.CL_IMAGE_DEPTH
-)
-
-func (im *Image) Info(param ImageInfo) (uint64, error) {
-	var ret uint64
-	if err := C.clGetImageInfo(im.id, C.cl_image_info(param), C.size_t(8), unsafe.Pointer(&ret), nil); err != C.CL_SUCCESS {
-		return 0, Cl_error(err)
-	}
-	return ret, nil
-}
-
-type Sampler struct {
-	id C.cl_sampler
-}
-
-func (s *Sampler) release() error {
-	if s.id != nil {
-		if err := C.clReleaseSampler(C.cl_sampler(s.id)); err != C.CL_SUCCESS {
-			return Cl_error(err)
-		}
-	}
-	return nil
-}
-
-type SamplerInfo C.cl_sampler_info
-
-const (
-	SAMPLER_REFERENCE_COUNT   SamplerInfo = C.CL_SAMPLER_REFERENCE_COUNT
-	SAMPLER_CONTEXT           SamplerInfo = C.CL_SAMPLER_CONTEXT
-	SAMPLER_NORMALIZED_COORDS SamplerInfo = C.CL_SAMPLER_NORMALIZED_COORDS
-	SAMPLER_ADDRESSING_MODE   SamplerInfo = C.CL_SAMPLER_ADDRESSING_MODE
-	SAMPLER_FILTER_MODE       SamplerInfo = C.CL_SAMPLER_FILTER_MODE
-)
-
-func (s *Sampler) Info(param SamplerInfo) (uint32, error) {
-	var ret uint32
-	var c_size_ret C.size_t
-	if err := C.clGetSamplerInfo(s.id, C.cl_sampler_info(param), C.size_t(4), unsafe.Pointer(&ret), &c_size_ret); err != C.CL_SUCCESS {
-		return 0, Cl_error(err)
-	}
-	return ret, nil
 }

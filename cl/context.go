@@ -55,7 +55,6 @@ const (
 	CONTEXT_NUM_DEVICES     ContextProperty = C.CL_CONTEXT_NUM_DEVICES
 	CONTEXT_DEVICES         ContextProperty = C.CL_CONTEXT_DEVICES
 	CONTEXT_PROPERTIES      ContextProperty = C.CL_CONTEXT_PROPERTIES
-	//CONTEXT_D3D10_PREFER_SHARED_RESOURCES_KHR ContextProperty = C.CL_CONTEXT_D3D10_PREFER_SHARED_RESOURCES_KHR
 )
 
 func ContextProperties() []ContextProperty {
@@ -67,7 +66,8 @@ func ContextProperties() []ContextProperty {
 }
 
 type Context struct {
-	id C.cl_context
+	id         C.cl_context
+	properties map[ContextProperty]interface{}
 }
 
 func createParameters(params map[ContextParameter]interface{}) ([]C.cl_context_properties, error) {
@@ -106,10 +106,10 @@ func NewContextOfType(params map[ContextParameter]interface{}, t DeviceType) (*C
 	if c_context = C.clCreateContextFromType(&c_params[0], C.cl_device_type(t), nil, nil, &err); err != C.CL_SUCCESS {
 		return nil, Cl_error(err)
 	}
-	context := &Context{id: c_context}
-	runtime.SetFinalizer(context, (*Context).release)
+	c := &Context{id: c_context, properties: make(map[ContextProperty]interface{})}
+	runtime.SetFinalizer(c, (*Context).release)
 
-	return context, nil
+	return c, nil
 }
 
 func NewContextOfDevices(params map[ContextParameter]interface{}, devices []Device) (*Context, error) {
@@ -129,79 +129,53 @@ func NewContextOfDevices(params map[ContextParameter]interface{}, devices []Devi
 	if c_context = C.clCreateContext(&c_params[0], C.cl_uint(len(c_devices)), &c_devices[0], nil, nil, &err); err != C.CL_SUCCESS {
 		return nil, Cl_error(err)
 	}
-	context := &Context{id: c_context}
-	runtime.SetFinalizer(context, (*Context).release)
+	c := &Context{id: c_context, properties: make(map[ContextProperty]interface{})}
+	runtime.SetFinalizer(c, (*Context).release)
 
-	return context, nil
+	return c, nil
 }
 
-func (context *Context) Properties() (map[ContextProperty]interface{}, error) {
-	props := make(map[ContextProperty]interface{})
-	for _, prop := range ContextProperties() {
-		if data, err := context.Property(prop); err == nil {
-			props[prop] = data
-		} else if err != Cl_error(C.CL_INVALID_VALUE) {
-			return nil, err
-		}
+func (c *Context) Property(prop ContextProperty) interface{} {
+	if value, ok := c.properties[prop]; ok {
+		return value
 	}
-	if len(props) == 0 {
-		return nil, Cl_error(C.CL_INVALID_VALUE)
-	}
-	return props, nil
-}
 
-func (context *Context) Property(prop ContextProperty) (interface{}, error) {
 	var data interface{}
 	var length C.size_t
 	var ret C.cl_int
 
 	switch prop {
-	/*case CONTEXT_D3D10_PREFER_SHARED_RESOURCES_KHR:
-	var val C.cl_bool
-	ret = C.clGetContextInfo(context.id, C.cl_context_info(prop), C.size_t(unsafe.Sizeof(val)), unsafe.Pointer(&val), &length)
-	data = val == C.CL_TRUE
-	*/
-
 	case CONTEXT_REFERENCE_COUNT,
 		CONTEXT_NUM_DEVICES:
 		var val C.cl_uint
-		ret = C.clGetContextInfo(context.id, C.cl_context_info(prop), C.size_t(unsafe.Sizeof(val)), unsafe.Pointer(&val), &length)
+		ret = C.clGetContextInfo(c.id, C.cl_context_info(prop), C.size_t(unsafe.Sizeof(val)), unsafe.Pointer(&val), &length)
 		data = val
 
 	case CONTEXT_DEVICES:
-		if data, err := context.Property(CONTEXT_NUM_DEVICES); err != nil {
-			return nil, err
+		if data := c.Property(CONTEXT_NUM_DEVICES); data == nil {
+			return nil
 		} else {
 			num_devs := data.(C.cl_uint)
 			c_devs := make([]C.cl_device_id, num_devs)
-			if ret = C.clGetContextInfo(context.id, C.cl_context_info(prop), C.size_t(num_devs*C.cl_uint(unsafe.Sizeof(c_devs[0]))), unsafe.Pointer(&c_devs[0]), &length); ret != C.CL_SUCCESS {
-				return nil, Cl_error(ret)
+			if ret = C.clGetContextInfo(c.id, C.cl_context_info(prop), C.size_t(num_devs*C.cl_uint(unsafe.Sizeof(c_devs[0]))), unsafe.Pointer(&c_devs[0]), &length); ret != C.CL_SUCCESS {
+				return nil
 			}
 			devs := make([]Device, length/C.size_t(unsafe.Sizeof(c_devs[0])))
 			for i, val := range c_devs {
 				devs[i].id = val
 			}
-			return devs, nil
+			data = devs
 		}
 
 	default:
-		return nil, Cl_error(C.CL_INVALID_VALUE)
+		return nil
 	}
 
 	if ret != C.CL_SUCCESS {
-		return nil, Cl_error(ret)
+		return nil
 	}
-	return data, nil
-}
-
-func (c *Context) release() error {
-	if c.id != nil {
-		if err := C.clReleaseContext(c.id); err != C.CL_SUCCESS {
-			return Cl_error(err)
-		}
-		c.id = nil
-	}
-	return nil
+	c.properties[prop] = data
+	return c.properties[prop]
 }
 
 func (c *Context) NewCommandQueue(device Device, param CommandQueueParameter) (*CommandQueue, error) {
@@ -241,7 +215,7 @@ func (c *Context) NewProgramFromFile(filename string) (*Program, error) {
 	return c.NewProgramFromSource(string(content))
 }
 
-func (c *Context) NewBuffer(flags MemFlags, size uint32) (*Buffer, error) {
+func (c *Context) NewBuffer(flags MemoryFlags, size uint32) (*Buffer, error) {
 	var c_buffer C.cl_mem
 	var err C.cl_int
 
@@ -255,7 +229,7 @@ func (c *Context) NewBuffer(flags MemFlags, size uint32) (*Buffer, error) {
 	return buffer, nil
 }
 
-func (c *Context) NewImage2D(flags MemFlags, format ImageFormat, width, height, rowPitch uint32, data *byte) (*Image, error) {
+func (c *Context) NewImage2D(flags MemoryFlags, format ImageFormat, width, height, rowPitch uint32, data *byte) (*Image, error) {
 	var c_buffer C.cl_mem
 	var err C.cl_int
 
@@ -267,13 +241,13 @@ func (c *Context) NewImage2D(flags MemFlags, format ImageFormat, width, height, 
 		return nil, Cl_error(err)
 	}
 
-	image := &Image{id: c_buffer, w: width, h: height, d: 0}
+	image := &Image{id: c_buffer, format: format, properties: make(map[ImageProperty]Size)}
 	runtime.SetFinalizer(image, (*Image).release)
 
 	return image, nil
 }
 
-func (c *Context) NewImage3D(flags MemFlags, format ImageFormat, width, height, depth, rowPitch, slicePitch uint32, data *byte) (*Image, error) {
+func (c *Context) NewImage3D(flags MemoryFlags, format ImageFormat, width, height, depth, rowPitch, slicePitch uint32, data *byte) (*Image, error) {
 	var c_buffer C.cl_mem
 	var err C.cl_int
 
@@ -285,7 +259,7 @@ func (c *Context) NewImage3D(flags MemFlags, format ImageFormat, width, height, 
 		return nil, Cl_error(err)
 	}
 
-	image := &Image{id: c_buffer}
+	image := &Image{id: c_buffer, format: format, properties: make(map[ImageProperty]Size)}
 	runtime.SetFinalizer(image, (*Image).release)
 
 	return image, nil
@@ -304,8 +278,18 @@ func (c *Context) NewSampler(normalizedCoords bool, addressingMode AddressingMod
 		return nil, Cl_error(err)
 	}
 
-	sampler := &Sampler{id: c_sampler}
+	sampler := &Sampler{id: c_sampler, properties: make(map[SamplerProperty]interface{})}
 	runtime.SetFinalizer(sampler, (*Sampler).release)
 
 	return sampler, nil
+}
+
+func (c *Context) release() error {
+	if c.id != nil {
+		if err := C.clReleaseContext(c.id); err != C.CL_SUCCESS {
+			return Cl_error(err)
+		}
+		c.id = nil
+	}
+	return nil
 }

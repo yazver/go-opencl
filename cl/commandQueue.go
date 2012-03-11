@@ -44,18 +44,6 @@ type CommandQueue struct {
 	id C.cl_command_queue
 }
 
-func (q *CommandQueue) release() error {
-	if q.id != nil {
-		if err := C.clReleaseCommandQueue(q.id); err != C.CL_SUCCESS {
-			return Cl_error(err)
-		}
-		q.id = nil
-	}
-	return nil
-}
-
-type Size C.size_t
-
 func (cq *CommandQueue) EnqueueKernel(k *Kernel, offset, gsize, lsize []Size) error {
 
 	cptr := func(w []Size) *C.size_t {
@@ -91,35 +79,34 @@ func (cq *CommandQueue) EnqueueWriteBuffer(buf *Buffer, data []byte, offset uint
 	return nil
 }
 
-func (cq *CommandQueue) EnqueueReadImage(im *Image, origin, region [3]Size, rowPitch, slicePitch uint32) ([]byte, error) {
-
-	size := 0
-	if im.d == 0 {
-		if rowPitch == 0 {
-			elemSize, err := im.Info(IMAGE_ELEMENT_SIZE)
-			if err != nil {
-				return []byte{}, nil
-			}
-			rowPitch = uint32(elemSize) * im.w
-		}
-		size = int(rowPitch * im.h)
-	} else {
-		if slicePitch == 0 {
-			if rowPitch == 0 { // ditto. ugh.
-				elemSize, err := im.Info(IMAGE_ELEMENT_SIZE)
-				if err != nil {
-					return []byte{}, nil
-				}
-				rowPitch = uint32(elemSize) * im.w
-			}
-			slicePitch = rowPitch * im.d
-		}
-		size = int(slicePitch * im.d)
+func (cq *CommandQueue) EnqueueReadImage(i *Image, blocking bool, origin, region [3]Size, rowPitch, slicePitch Size) ([]byte, error) {
+	c_blocking := C.cl_bool(C.CL_FALSE)
+	if blocking {
+		c_blocking = C.CL_TRUE
 	}
 
+	size := Size(0)
+	if i.Property(IMAGE_DEPTH) == 0 || i.Property(IMAGE_DEPTH) == 1 { // 2D image
+		if rowPitch == 0 {
+			rowPitch = i.Property(IMAGE_WIDTH) * i.Property(IMAGE_ELEMENT_SIZE)
+		}
+		size = rowPitch * i.Property(IMAGE_HEIGHT)
+	} else {
+		if slicePitch == 0 {
+			if rowPitch == 0 {
+				rowPitch = i.Property(IMAGE_WIDTH) * i.Property(IMAGE_ELEMENT_SIZE)
+			}
+			slicePitch = rowPitch * i.Property(IMAGE_DEPTH)
+		}
+		size = slicePitch * i.Property(IMAGE_DEPTH)
+	}
 	bytes := make([]byte, size)
 
-	if ret := C.clEnqueueReadImage(cq.id, im.id, C.CL_TRUE, (*C.size_t)(unsafe.Pointer(&origin[0])), (*C.size_t)(unsafe.Pointer(&region[0])), C.size_t(rowPitch), C.size_t(slicePitch), unsafe.Pointer(&bytes[0]), 0, nil, nil); ret != C.CL_SUCCESS {
+	if ret := C.clEnqueueReadImage(
+		cq.id, i.id, c_blocking,
+		(*C.size_t)(unsafe.Pointer(&origin[0])), (*C.size_t)(unsafe.Pointer(&region[0])),
+		C.size_t(rowPitch), C.size_t(slicePitch), unsafe.Pointer(&bytes[0]),
+		0, nil, nil); ret != C.CL_SUCCESS {
 		return nil, Cl_error(ret)
 	}
 	return bytes, nil
@@ -138,6 +125,16 @@ func (cq *CommandQueue) EnqueueWriteImage(img *Image, blocking bool, origin, reg
 		unsafe.Pointer(&data[0]),
 		C.cl_uint(0), nil, nil); ret != C.CL_SUCCESS {
 		return Cl_error(ret)
+	}
+	return nil
+}
+
+func (q *CommandQueue) release() error {
+	if q.id != nil {
+		if err := C.clReleaseCommandQueue(q.id); err != C.CL_SUCCESS {
+			return Cl_error(err)
+		}
+		q.id = nil
 	}
 	return nil
 }
