@@ -27,12 +27,6 @@ package cl
 
 cl_context_properties PlatformToContextParameter(cl_platform_id platform) { return (cl_context_properties)platform; }
 
-cl_program clCreateProgramFromString(cl_context context,
-                                     char*      string,
-                                     cl_int*    err) {
-   return clCreateProgramWithSource(context, 1, (const char**)&string, NULL, err);
-}
-
 */
 import "C"
 
@@ -190,14 +184,13 @@ func (c *Context) NewCommandQueue(device Device, param CommandQueueParameter) (*
 	return queue, nil
 }
 
-func (c *Context) NewProgramFromSource(prog string) (*Program, error) {
+func (c *Context) NewProgramFromSource(prog []byte) (*Program, error) {
 	var c_program C.cl_program
 	var err C.cl_int
 
-	cs := C.CString(prog)
-	defer C.free(unsafe.Pointer(cs))
-
-	if c_program = C.clCreateProgramFromString(c.id, cs, &err); err != C.CL_SUCCESS {
+	srcPtr := (*C.char)(unsafe.Pointer(&prog[0]))
+	length := (C.size_t)(len(prog))
+	if c_program = C.clCreateProgramWithSource(c.id, 1, &srcPtr, &length, &err); err != C.CL_SUCCESS {
 		return nil, Cl_error(err)
 	}
 
@@ -212,7 +205,7 @@ func (c *Context) NewProgramFromFile(filename string) (*Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	return c.NewProgramFromSource(string(content))
+	return c.NewProgramFromSource(content)
 }
 
 func (c *Context) NewBuffer(flags MemoryFlags, size uint32) (*Buffer, error) {
