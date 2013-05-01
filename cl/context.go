@@ -21,6 +21,7 @@ package cl
 
 /*
 #cgo CFLAGS: -I CL
+#cgo CFLAGS: -Wno-error=deprecated-declarations
 #cgo LDFLAGS: -lOpenCL
 
 #include "CL/opencl.h"
