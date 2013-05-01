@@ -24,6 +24,7 @@ package cl
 #cgo LDFLAGS: -lOpenCL
 
 #include "CL/opencl.h"
+#include <stdlib.h>
 
 */
 import "C"
