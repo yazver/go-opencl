@@ -20,7 +20,7 @@
 package cl
 
 import (
-	"github.com/tones111/raw"
+	"github.com/pseudomind/go-opencl/raw"
 	"testing"
 )
 
