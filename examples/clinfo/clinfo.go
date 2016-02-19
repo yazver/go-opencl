@@ -19,7 +19,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/tones111/go-opencl/cl"
+	"github.com/pseudomind/go-opencl/cl"
 )
 
 func main() {

@@ -20,10 +20,17 @@
 package cl
 
 /*
-#cgo CFLAGS: -I CL
-#cgo LDFLAGS: -lOpenCL
+#cgo CFLAGS: -I CL -Wno-error=deprecated-declarations
+#cgo linux LDFLAGS: -lOpenCL
+#cgo windows LDFLAGS: -lOpenCL
+#cgo darwin LDFLAGS: -framework OpenCL
 
-#include "CL/opencl.h"
+#ifdef MAC
+	#include "OpenCL/cl.h"
+#else
+	#include "CL/opencl.h"
+#endif //MAC
+
 
 */
 import "C"

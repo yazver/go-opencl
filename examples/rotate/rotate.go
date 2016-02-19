@@ -20,8 +20,8 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/tones111/go-opencl/cl"
-	"github.com/tones111/raw"
+	"github.com/pseudomind/go-opencl/cl"
+	"github.com/pseudomind/go-opencl/raw"
 	"image"
 	"image/jpeg"
 	"image/png"

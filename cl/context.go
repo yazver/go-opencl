@@ -20,11 +20,16 @@
 package cl
 
 /*
-#cgo CFLAGS: -I CL
-#cgo CFLAGS: -Wno-error=deprecated-declarations
-#cgo LDFLAGS: -lOpenCL
+#cgo CFLAGS: -I CL -Wno-error=deprecated-declarations
+#cgo linux LDFLAGS: -lOpenCL
+#cgo windows LDFLAGS: -lOpenCL
+#cgo darwin LDFLAGS: -framework OpenCL
 
-#include "CL/opencl.h"
+#ifdef MAC
+	#include "OpenCL/cl.h"
+#else
+	#include "CL/opencl.h"
+#endif //MAC
 
 cl_context_properties PlatformToContextParameter(cl_platform_id platform) { return (cl_context_properties)platform; }
 
@@ -47,9 +52,9 @@ type ContextProperty C.cl_context_info
 
 const (
 	CONTEXT_REFERENCE_COUNT ContextProperty = C.CL_CONTEXT_REFERENCE_COUNT
-	CONTEXT_NUM_DEVICES     ContextProperty = C.CL_CONTEXT_NUM_DEVICES
-	CONTEXT_DEVICES         ContextProperty = C.CL_CONTEXT_DEVICES
-	CONTEXT_PROPERTIES      ContextProperty = C.CL_CONTEXT_PROPERTIES
+	CONTEXT_NUM_DEVICES ContextProperty = C.CL_CONTEXT_NUM_DEVICES
+	CONTEXT_DEVICES ContextProperty = C.CL_CONTEXT_DEVICES
+	CONTEXT_PROPERTIES ContextProperty = C.CL_CONTEXT_PROPERTIES
 )
 
 func ContextProperties() []ContextProperty {
@@ -66,7 +71,7 @@ type Context struct {
 }
 
 func createParameters(params map[ContextParameter]interface{}) ([]C.cl_context_properties, error) {
-	c_params := make([]C.cl_context_properties, (len(params)<<1)+1)
+	c_params := make([]C.cl_context_properties, (len(params) << 1) + 1)
 	i := 0
 	for param, value := range params {
 		c_params[i] = C.cl_context_properties(param)
@@ -74,7 +79,7 @@ func createParameters(params map[ContextParameter]interface{}) ([]C.cl_context_p
 		switch param {
 		case CONTEXT_PLATFORM:
 			if v, ok := value.(Platform); ok {
-				c_params[i+1] = C.PlatformToContextParameter(v.id)
+				c_params[i + 1] = C.PlatformToContextParameter(v.id)
 			} else {
 				return nil, Cl_error(C.CL_INVALID_VALUE)
 			}
@@ -151,11 +156,11 @@ func (c *Context) Property(prop ContextProperty) interface{} {
 			return nil
 		} else {
 			num_devs := data.(C.cl_uint)
-			c_devs := make([]C.cl_device_id, num_devs)
-			if ret = C.clGetContextInfo(c.id, C.cl_context_info(prop), C.size_t(num_devs*C.cl_uint(unsafe.Sizeof(c_devs[0]))), unsafe.Pointer(&c_devs[0]), &length); ret != C.CL_SUCCESS {
+			c_devs := make([]C.cl_device_id, uint(num_devs))
+			if ret = C.clGetContextInfo(c.id, C.cl_context_info(prop), C.size_t(num_devs * C.cl_uint(unsafe.Sizeof(c_devs[0]))), unsafe.Pointer(&c_devs[0]), &length); ret != C.CL_SUCCESS {
 				return nil
 			}
-			devs := make([]Device, length/C.size_t(unsafe.Sizeof(c_devs[0])))
+			devs := make([]Device, uint(length / C.size_t(unsafe.Sizeof(c_devs[0]))))
 			for i, val := range c_devs {
 				devs[i].id = val
 			}
@@ -231,7 +236,20 @@ func (c *Context) NewImage2D(flags MemoryFlags, format ImageFormat, width, heigh
 		image_channel_order:     C.cl_channel_order(format.ChannelOrder),
 		image_channel_data_type: C.cl_channel_type(format.ChannelDataType)}
 
-	if c_buffer = C.clCreateImage2D(c.id, C.cl_mem_flags(flags), c_format, C.size_t(width), C.size_t(height), C.size_t(rowPitch), unsafe.Pointer(data), &err); err != C.CL_SUCCESS {
+	//todo: image_slice_pitch is not well considered
+
+	c_image_desc := &C.cl_image_desc{
+		image_type: C.CL_MEM_OBJECT_IMAGE2D,
+		image_width: C.size_t(width),
+		image_height: C.size_t(height),
+		image_row_pitch: C.size_t(rowPitch),
+		image_slice_pitch: C.size_t(0),
+		num_mip_levels: 0,
+		num_samples:0,
+		buffer:nil,
+	}
+
+	if c_buffer = C.clCreateImage(c.id, C.cl_mem_flags(flags), c_format, c_image_desc, unsafe.Pointer(data), &err); err != C.CL_SUCCESS {
 		return nil, Cl_error(err)
 	}
 
@@ -249,7 +267,19 @@ func (c *Context) NewImage3D(flags MemoryFlags, format ImageFormat, width, heigh
 		image_channel_order:     C.cl_channel_order(format.ChannelOrder),
 		image_channel_data_type: C.cl_channel_type(format.ChannelDataType)}
 
-	if c_buffer = C.clCreateImage3D(c.id, C.cl_mem_flags(flags), c_format, C.size_t(width), C.size_t(height), C.size_t(depth), C.size_t(rowPitch), C.size_t(slicePitch), unsafe.Pointer(data), &err); err != C.CL_SUCCESS {
+	c_image_desc := &C.cl_image_desc{
+		image_type: C.CL_MEM_OBJECT_IMAGE3D,
+		image_width: C.size_t(width),
+		image_height: C.size_t(height),
+		image_depth: C.size_t(depth),
+		image_row_pitch: C.size_t(rowPitch),
+		image_slice_pitch: C.size_t(slicePitch),
+		num_mip_levels: 0,
+		num_samples:0,
+		buffer:nil,
+	}
+
+	if c_buffer = C.clCreateImage(c.id, C.cl_mem_flags(flags), c_format, c_image_desc, unsafe.Pointer(data), &err); err != C.CL_SUCCESS {
 		return nil, Cl_error(err)
 	}
 
